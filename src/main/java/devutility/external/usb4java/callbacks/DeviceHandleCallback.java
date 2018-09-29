@@ -1,7 +1,7 @@
 package devutility.external.usb4java.callbacks;
 
-import org.usb4java.DeviceHandle;
+import devutility.external.usb4java.models.UsbDevice;
 
 public interface DeviceHandleCallback {
-	void call(DeviceHandle handle);
+	void call(UsbDevice usbDevice);
 }
