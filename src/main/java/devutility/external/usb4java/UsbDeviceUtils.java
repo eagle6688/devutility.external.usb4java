@@ -10,7 +10,7 @@ import org.usb4java.LibUsbException;
 import devutility.external.usb4java.models.UsbDevice;
 import devutility.internal.lang.ExceptionUtils;
 
-public class DeviceUtils {
+public class UsbDeviceUtils {
 	/**
 	 * Find a usb device from device list.
 	 * @param context: Context object.
@@ -22,7 +22,7 @@ public class DeviceUtils {
 		DeviceList devices = new DeviceList();
 		int result = LibUsb.getDeviceList(context, devices);
 
-		if (result != LibUsb.SUCCESS) {
+		if (result < 0) {
 			throw new LibUsbException("Unable to get device list", result);
 		}
 
