@@ -57,11 +57,13 @@ public class DUE_Usb4Java_ScannerTest extends BaseTest {
 			InterfaceDescriptor interfaceDescriptor = configDescriptor.iface()[0].altsetting()[0];
 			usbDevice.setInterfaceNumber(interfaceDescriptor.bInterfaceNumber());
 
+			System.out.format("endpoint count: %d\n", interfaceDescriptor.endpoint().length);
+
 			EndpointDescriptor endpointDescriptor = interfaceDescriptor.endpoint()[0];
 			usbDevice.setEndpointAddress(endpointDescriptor.bEndpointAddress());
 			usbDevice.setEndpointMaxPacketSize(endpointDescriptor.wMaxPacketSize());
 
-			UsbDeviceUtils.deviceHandle(usbDevice, deviceHandleUsage);
+			//UsbDeviceUtils.deviceHandle(usbDevice, deviceHandleUsage);
 		};
 
 		FindUsbDeviceCallback findUsbDeviceCallback = (usbDevice) -> {
