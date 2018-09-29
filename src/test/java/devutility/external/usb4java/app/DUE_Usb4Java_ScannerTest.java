@@ -41,7 +41,9 @@ public class DUE_Usb4Java_ScannerTest extends BaseTest {
 					continue;
 				}
 
-				System.out.println(transferedCount.get());
+				if (byteBuffer.hasArray()) {
+					System.out.format("Read from device length:  %d, value : %s\n", transferedCount.get(), new String(byteBuffer.array()));
+				}
 			}
 		};
 
