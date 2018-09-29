@@ -3,8 +3,8 @@
 	<groupId>com.github.eagle6688</groupId>
 	<artifactId>devutility.external.usb4java</artifactId>
 	<version>0.1</version>
-	<name>${project.groupId}:${project.artifactId}</name>
 	<packaging>jar</packaging>
+	<name>${project.groupId}:${project.artifactId}</name>
 	<description>Some utilities for usb4java 1.2.0</description>
 	<url>https://github.com/eagle6688/devutility.external.usb4java</url>
 	<properties>
@@ -55,11 +55,21 @@
 	<!-- distributionManagement end -->
 
 	<dependencies>
+		<!-- usb4java -->
 		<dependency>
 			<groupId>org.usb4java</groupId>
 			<artifactId>usb4java</artifactId>
 			<version>1.2.0</version>
 		</dependency>
+		<!-- usb4java end -->
+		<!-- devutility -->
+		<dependency>
+			<groupId>com.github.eagle6688</groupId>
+			<artifactId>devutility.internal</artifactId>
+			<version>1.1.18</version>
+			<scope>provided</scope>
+		</dependency>
+		<!-- devutility end -->
 	</dependencies>
 	<build>
 		<plugins>
