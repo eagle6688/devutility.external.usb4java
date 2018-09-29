@@ -1,15 +1,22 @@
 package devutility.external.usb4java.app;
 
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
+import org.usb4java.ConfigDescriptor;
+import org.usb4java.EndpointDescriptor;
+import org.usb4java.InterfaceDescriptor;
 import org.usb4java.LibUsb;
 import org.usb4java.LibUsbException;
 
 import devutility.external.usb4java.BaseTest;
 import devutility.external.usb4java.UsbDeviceUtils;
-import devutility.external.usb4java.callbacks.DeviceHandleCallback;
+import devutility.external.usb4java.callbacks.ClaimInterfaceCallback;
+import devutility.external.usb4java.callbacks.ConfigDescriptorUsage;
+import devutility.external.usb4java.callbacks.DeviceHandleUsage;
 import devutility.external.usb4java.callbacks.FindUsbDeviceCallback;
 import devutility.external.usb4java.callbacks.InitContextCallback;
+import devutility.internal.lang.ExceptionUtils;
 import devutility.internal.test.TestExecutor;
 
 public class DUE_Usb4Java_ScannerTest extends BaseTest {
@@ -18,21 +25,41 @@ public class DUE_Usb4Java_ScannerTest extends BaseTest {
 
 	@Override
 	public void run() {
-		DeviceHandleCallback deviceHandleCallback = (usbDevice) -> {
-			IntBuffer intBuffer = IntBuffer.allocate(8);
-			int result = LibUsb.getConfiguration(usbDevice.getDeviceHandle(), intBuffer);
+		ClaimInterfaceCallback claimInterfaceCallback = (usbDevice) -> {
+			boolean quit = false;
+			System.out.format("%x", usbDevice.getEndpointAddress());
 
-			if (result != LibUsb.SUCCESS) {
-				throw new LibUsbException("Unable to get Configuration", result);
+			while (!quit) {
+				IntBuffer transferedCount = IntBuffer.allocate(8);
+				ByteBuffer byteBuffer = ByteBuffer.allocateDirect(usbDevice.getEndpointMaxPacketSize());
+				int result = LibUsb.interruptTransfer(usbDevice.getDeviceHandle(), (byte) 0x83, byteBuffer, transferedCount, 5000);
+
+				if (result != LibUsb.SUCCESS) {
+					System.out.println(result);
+					LibUsbException exception = new LibUsbException("Unable to interrupt transfer", result);
+					System.out.println(ExceptionUtils.toString(exception));
+					continue;
+				}
+
+				System.out.println(transferedCount.get());
 			}
+		};
 
-			int config = intBuffer.get();
-			System.out.println(config);
-			result = LibUsb.setConfiguration(usbDevice.getDeviceHandle(), config);
+		DeviceHandleUsage deviceHandleUsage = (usbDevice) -> {
+			UsbDeviceUtils.activeDevice(usbDevice.getDeviceHandle());
+			UsbDeviceUtils.claimInterface(usbDevice, claimInterfaceCallback);
+		};
 
-			if (result != LibUsb.SUCCESS) {
-				throw new LibUsbException("Unable to set Configuration", result);
-			}
+		ConfigDescriptorUsage configDescriptorUsage = (usbDevice) -> {
+			ConfigDescriptor configDescriptor = usbDevice.getConfigDescriptor();
+			InterfaceDescriptor interfaceDescriptor = configDescriptor.iface()[0].altsetting()[0];
+			usbDevice.setInterfaceNumber(interfaceDescriptor.bInterfaceNumber());
+
+			EndpointDescriptor endpointDescriptor = interfaceDescriptor.endpoint()[0];
+			usbDevice.setEndpointAddress(endpointDescriptor.bEndpointAddress());
+			usbDevice.setEndpointMaxPacketSize(endpointDescriptor.wMaxPacketSize());
+
+			UsbDeviceUtils.deviceHandle(usbDevice, deviceHandleUsage);
 		};
 
 		FindUsbDeviceCallback findUsbDeviceCallback = (usbDevice) -> {
@@ -43,7 +70,7 @@ public class DUE_Usb4Java_ScannerTest extends BaseTest {
 
 			System.out.println("Usb device found!");
 			System.out.println(usbDevice.getDeviceDescriptor().toString());
-			UsbDeviceUtils.deviceHandle(usbDevice, deviceHandleCallback);
+			UsbDeviceUtils.useConfigDescriptor(usbDevice, 0, configDescriptorUsage);
 		};
 
 		InitContextCallback initContextCallback = (usbDevice) -> {

@@ -1,5 +1,6 @@
 package devutility.external.usb4java;
 
+import java.nio.IntBuffer;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -13,10 +14,10 @@ import org.usb4java.LibUsb;
 import org.usb4java.LibUsbException;
 
 import devutility.external.usb4java.callbacks.ClaimInterfaceCallback;
-import devutility.external.usb4java.callbacks.DeviceHandleCallback;
+import devutility.external.usb4java.callbacks.DeviceHandleUsage;
 import devutility.external.usb4java.callbacks.FindUsbDeviceCallback;
 import devutility.external.usb4java.callbacks.InitContextCallback;
-import devutility.external.usb4java.callbacks.UseConfigDescriptorCallback;
+import devutility.external.usb4java.callbacks.ConfigDescriptorUsage;
 import devutility.external.usb4java.enums.UsbDeviceErrorCode;
 import devutility.external.usb4java.models.UsbDevice;
 import devutility.internal.lang.ExceptionUtils;
@@ -90,55 +91,24 @@ public class UsbDeviceUtils {
 	}
 
 	/**
-	 * Create a DeviceHandle object by provided device and pass it to callback.
-	 * @param usbDevice: UsbDevice object.
-	 * @param callback: DeviceHandleCallback object.
+	 * Use ConfigDescriptor
+	 * @param usbDevice: UsbDevice object, must contain Device object.
+	 * @param index: Config index.
+	 * @param usage: ConfigDescriptorUsage object.
 	 */
-	public static void deviceHandle(UsbDevice usbDevice, DeviceHandleCallback callback) {
-		DeviceHandle handle = new DeviceHandle();
-		int result = LibUsb.open(usbDevice.getDevice(), handle);
+	public static void useConfigDescriptor(UsbDevice usbDevice, int index, ConfigDescriptorUsage usage) {
+		ConfigDescriptor descriptor = new ConfigDescriptor();
+		int result = LibUsb.getConfigDescriptor(usbDevice.getDevice(), (byte) index, descriptor);
 
 		if (result != LibUsb.SUCCESS) {
-			throw new LibUsbException("Unable to open USB device", result);
+			throw new LibUsbException("Unable to read config descriptor", result);
 		}
 
 		try {
-			usbDevice.setDeviceHandle(handle);
-			callback.call(usbDevice);
+			usbDevice.setConfigDescriptor(descriptor);
+			usage.call(usbDevice);
 		} finally {
-			LibUsb.close(handle);
-		}
-	}
-
-	/**
-	 * Claim interface with provided DeviceHandle and interface number, after finish that execute the callback.
-	 * @param handle: DeviceHandle handle.
-	 * @param interfaceNumber: Interface number.
-	 * @param callback: ClaimInterfaceCallback object.
-	 */
-	public static void claimInterface(DeviceHandle handle, int interfaceNumber, ClaimInterfaceCallback callback) {
-		int result = LibUsb.claimInterface(handle, interfaceNumber);
-
-		if (result != LibUsb.SUCCESS) {
-			throw new LibUsbException("Unable to claim interface", result);
-		}
-
-		try {
-			callback.call();
-		} finally {
-			result = LibUsb.releaseInterface(handle, interfaceNumber);
-
-			if (result != LibUsb.SUCCESS) {
-				throw new LibUsbException("Unable to release interface", result);
-			}
-		}
-	}
-
-	public static void useConfigDescriptor(ConfigDescriptor configDescriptor, UseConfigDescriptorCallback callback) {
-		try {
-			callback.call();
-		} finally {
-			LibUsb.freeConfigDescriptor(configDescriptor);
+			LibUsb.freeConfigDescriptor(descriptor);
 		}
 	}
 
@@ -165,6 +135,73 @@ public class UsbDeviceUtils {
 		}
 
 		return list;
+	}
+
+	/**
+	 * Create a DeviceHandle object by provided device and pass it to callback.
+	 * @param usbDevice: UsbDevice object.
+	 * @param usage: DeviceHandleUsage object.
+	 */
+	public static void deviceHandle(UsbDevice usbDevice, DeviceHandleUsage usage) {
+		DeviceHandle handle = new DeviceHandle();
+		int result = LibUsb.open(usbDevice.getDevice(), handle);
+
+		if (result != LibUsb.SUCCESS) {
+			throw new LibUsbException("Unable to open USB device", result);
+		}
+
+		try {
+			usbDevice.setDeviceHandle(handle);
+			usage.call(usbDevice);
+		} finally {
+			LibUsb.close(handle);
+		}
+	}
+
+	/**
+	 * Active provided device.
+	 * @param handle: DeviceHandle object.
+	 */
+	public static void activeDevice(DeviceHandle handle) {
+		IntBuffer intBuffer = IntBuffer.allocate(8);
+		int result = LibUsb.getConfiguration(handle, intBuffer);
+
+		if (result != LibUsb.SUCCESS) {
+			throw new LibUsbException("Unable to get Configuration", result);
+		}
+
+		int config = intBuffer.get();
+		System.out.println(config);
+		result = LibUsb.setConfiguration(handle, config);
+
+		if (result != LibUsb.SUCCESS) {
+			throw new LibUsbException("Unable to set Configuration", result);
+		}
+	}
+
+	/**
+	 * Claim interface with provided DeviceHandle and interface number, after finish that execute the callback.
+	 * @param usbDevice: UsbDevice object.
+	 * @param callback: ClaimInterfaceCallback object.
+	 */
+	public static void claimInterface(UsbDevice usbDevice, ClaimInterfaceCallback callback) {
+		DeviceHandle handle = usbDevice.getDeviceHandle();
+		int interfaceNumber = usbDevice.getInterfaceNumber();
+		int result = LibUsb.claimInterface(handle, interfaceNumber);
+
+		if (result != LibUsb.SUCCESS) {
+			throw new LibUsbException("Unable to claim interface", result);
+		}
+
+		try {
+			callback.call(usbDevice);
+		} finally {
+			result = LibUsb.releaseInterface(handle, interfaceNumber);
+
+			if (result != LibUsb.SUCCESS) {
+				throw new LibUsbException("Unable to release interface", result);
+			}
+		}
 	}
 
 	/**
