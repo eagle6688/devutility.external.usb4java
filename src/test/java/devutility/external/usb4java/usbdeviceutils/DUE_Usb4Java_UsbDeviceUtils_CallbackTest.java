@@ -24,7 +24,7 @@ public class DUE_Usb4Java_UsbDeviceUtils_CallbackTest extends BaseTest {
 		};
 
 		InitContextCallback initContextCallback = (context) -> {
-			UsbDeviceUtils.find(context, vendorId, productId, findUsbDeviceCallback);
+			UsbDeviceUtils.findDevice(context, vendorId, productId, findUsbDeviceCallback);
 		};
 
 		UsbDeviceUtils.init(initContextCallback);
