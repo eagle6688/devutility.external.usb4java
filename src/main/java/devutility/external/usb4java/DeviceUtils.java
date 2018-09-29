@@ -22,7 +22,7 @@ public class DeviceUtils {
 		DeviceList devices = new DeviceList();
 		int result = LibUsb.getDeviceList(context, devices);
 
-		if (result < 0) {
+		if (result != LibUsb.SUCCESS) {
 			throw new LibUsbException("Unable to get device list", result);
 		}
 
@@ -31,7 +31,7 @@ public class DeviceUtils {
 				DeviceDescriptor descriptor = new DeviceDescriptor();
 				result = LibUsb.getDeviceDescriptor(device, descriptor);
 
-				if (result < 0) {
+				if (result != LibUsb.SUCCESS) {
 					LibUsbException exception = new LibUsbException("Unable to read device descriptor", result);
 					System.out.println(ExceptionUtils.toString(exception));
 					continue;
@@ -61,7 +61,7 @@ public class DeviceUtils {
 		Context context = new Context();
 		int result = LibUsb.init(context);
 
-		if (result < 0) {
+		if (result != LibUsb.SUCCESS) {
 			throw new LibUsbException("Unable to initialize libusb", result);
 		}
 
