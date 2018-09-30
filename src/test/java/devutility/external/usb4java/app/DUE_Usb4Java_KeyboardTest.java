@@ -11,40 +11,27 @@ import org.usb4java.LibUsbException;
 
 import devutility.external.usb4java.BaseTest;
 import devutility.external.usb4java.UsbDeviceUtils;
+import devutility.external.usb4java.app.services.ControlTransferService;
+import devutility.external.usb4java.app.services.InterruptTransferService;
 import devutility.external.usb4java.callbacks.ClaimInterfaceCallback;
 import devutility.external.usb4java.callbacks.ConfigDescriptorUsage;
 import devutility.external.usb4java.callbacks.DeviceHandleUsage;
 import devutility.external.usb4java.callbacks.FindUsbDeviceCallback;
 import devutility.external.usb4java.callbacks.InitContextCallback;
+import devutility.external.usb4java.models.UsbDevice;
 import devutility.internal.lang.ExceptionUtils;
 import devutility.internal.test.TestExecutor;
 
-public class DUE_Usb4Java_ScannerTest extends BaseTest {
-	private static final short vendorId = 0x2010;
-	private static final short productId = (short) 0x7638;
+public class DUE_Usb4Java_KeyboardTest extends BaseTest {
+	private static final short vendorId = 0x046d;
+	private static final short productId = (short) 0xc326;
 
 	@Override
 	public void run() {
 		ClaimInterfaceCallback claimInterfaceCallback = (usbDevice) -> {
-			boolean quit = false;
-			System.out.format("%x", usbDevice.getEndpointAddress());
-
-			while (!quit) {
-				IntBuffer transferedCount = IntBuffer.allocate(8);
-				ByteBuffer byteBuffer = ByteBuffer.allocateDirect(usbDevice.getEndpointMaxPacketSize());
-				int result = LibUsb.interruptTransfer(usbDevice.getDeviceHandle(), (byte) 0x83, byteBuffer, transferedCount, 5000);
-
-				if (result != LibUsb.SUCCESS) {
-					System.out.println(result);
-					LibUsbException exception = new LibUsbException("Unable to interrupt transfer", result);
-					System.out.println(ExceptionUtils.toString(exception));
-					continue;
-				}
-
-				if (byteBuffer.hasArray()) {
-					System.out.format("Read from device length:  %d, value : %s\n", transferedCount.get(), new String(byteBuffer.array()));
-				}
-			}
+			System.out.format("EndpointAddress: %x\n", usbDevice.getEndpointAddress());
+			ControlTransferService.cases(usbDevice);
+			InterruptTransferService.test(usbDevice);
 		};
 
 		DeviceHandleUsage deviceHandleUsage = (usbDevice) -> {
@@ -68,7 +55,10 @@ public class DUE_Usb4Java_ScannerTest extends BaseTest {
 
 		FindUsbDeviceCallback findUsbDeviceCallback = (usbDevice) -> {
 			if (usbDevice.getDevice() == null) {
-				System.out.println("Not found!");
+				System.out.print("Device not found, vendorId: ");
+				System.out.print(vendorId);
+				System.out.print(", productId: ");
+				System.out.println(productId);
 				return;
 			}
 
@@ -84,7 +74,26 @@ public class DUE_Usb4Java_ScannerTest extends BaseTest {
 		UsbDeviceUtils.init(initContextCallback);
 	}
 
+	void interruptTransferTest(UsbDevice usbDevice) {
+		while (true) {
+			IntBuffer transferedCountBuffer = IntBuffer.allocate(8);
+			ByteBuffer byteBuffer = ByteBuffer.allocateDirect(usbDevice.getEndpointMaxPacketSize());
+			int result = LibUsb.interruptTransfer(usbDevice.getDeviceHandle(), usbDevice.getEndpointAddress(), byteBuffer, transferedCountBuffer, 5000);
+
+			if (result != LibUsb.SUCCESS) {
+				System.out.println(result);
+				LibUsbException exception = new LibUsbException("Unable to interrupt transfer", result);
+				System.out.println(ExceptionUtils.toString(exception));
+				continue;
+			}
+
+			if (byteBuffer.hasArray()) {
+				System.out.format("Read from device length:  %d, value : %s\n", transferedCountBuffer.get(), new String(byteBuffer.array()));
+			}
+		}
+	}
+
 	public static void main(String[] args) {
-		TestExecutor.run(DUE_Usb4Java_ScannerTest.class);
+		TestExecutor.run(DUE_Usb4Java_KeyboardTest.class);
 	}
 }

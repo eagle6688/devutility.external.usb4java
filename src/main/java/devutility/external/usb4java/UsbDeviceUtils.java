@@ -171,7 +171,6 @@ public class UsbDeviceUtils {
 		}
 
 		int config = intBuffer.get();
-		System.out.println(config);
 		result = LibUsb.setConfiguration(handle, config);
 
 		if (result != LibUsb.SUCCESS) {
