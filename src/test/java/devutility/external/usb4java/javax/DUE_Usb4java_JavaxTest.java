@@ -10,9 +10,6 @@ import javax.usb.UsbHostManager;
 import javax.usb.UsbHub;
 import javax.usb.UsbInterface;
 import javax.usb.UsbPipe;
-import javax.usb.event.UsbPipeDataEvent;
-import javax.usb.event.UsbPipeErrorEvent;
-import javax.usb.event.UsbPipeListener;
 
 import devutility.external.usb4java.BaseTest;
 import devutility.internal.test.TestExecutor;
@@ -52,19 +49,6 @@ public class DUE_Usb4java_JavaxTest extends BaseTest {
 		UsbEndpoint receivedUsbEndpoint = (UsbEndpoint) iface.getUsbEndpoints().get(0);
 		UsbPipe receivedUsbPipe = receivedUsbEndpoint.getUsbPipe();
 		receivedUsbPipe.open();
-
-		receivedUsbPipe.addUsbPipeListener(new UsbPipeListener() {
-			@Override
-			public void errorEventOccurred(UsbPipeErrorEvent event) {
-				System.out.println("error occur");
-			}
-
-			@Override
-			public void dataEventOccurred(UsbPipeDataEvent event) {
-				System.out.println("data occur");
-			}
-		});
-
 		return receivedUsbPipe;
 	}
 
