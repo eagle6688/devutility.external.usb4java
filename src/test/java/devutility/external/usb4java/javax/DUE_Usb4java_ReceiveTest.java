@@ -7,7 +7,7 @@ import devutility.external.usb4java.javax.callbacks.ReceiveHandle;
 import devutility.external.usb4java.javax.listeners.ReceiveListener;
 import devutility.internal.test.TestExecutor;
 
-public class DUE_Usb4java_JavaxTest extends BaseTest {
+public class DUE_Usb4java_ReceiveTest extends BaseTest {
 	public short idVendor = 0;
 	public short idProduct = 0;
 	public byte interfaceNumber = 0;
@@ -33,11 +33,11 @@ public class DUE_Usb4java_JavaxTest extends BaseTest {
 	}
 
 	public static void main(String[] args) {
-		DUE_Usb4java_JavaxTest test = new DUE_Usb4java_JavaxTest();
-		test.idVendor = (short) 0xe2b7;
-		test.idProduct = (short) 0x0811;
-		test.interfaceNumber = (byte) 3;
-		test.endpointAddress = (byte) 0x82;
+		DUE_Usb4java_ReceiveTest test = new DUE_Usb4java_ReceiveTest();
+		test.idVendor = (short) 0x04b3;
+		test.idProduct = (short) 0x3025;
+		test.interfaceNumber = (byte) 0;
+		test.endpointAddress = (byte) 0x81;
 		TestExecutor.run(test);
 	}
 }
