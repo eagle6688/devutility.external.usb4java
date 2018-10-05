@@ -10,6 +10,9 @@ import javax.usb.UsbHostManager;
 import javax.usb.UsbHub;
 import javax.usb.UsbInterface;
 import javax.usb.UsbPipe;
+import javax.usb.event.UsbPipeDataEvent;
+import javax.usb.event.UsbPipeErrorEvent;
+import javax.usb.event.UsbPipeListener;
 
 import devutility.external.usb4java.BaseTest;
 import devutility.internal.test.TestExecutor;
@@ -21,16 +24,19 @@ public class DUE_Usb4java_JavaxTest extends BaseTest {
 	@Override
 	public void run() {
 		try {
-			UsbPipe sendUsbPipe = useUsb();
+			UsbPipe receivedUsbPipe = useUsb();
 
-			if (sendUsbPipe != null) {
-				byte[] buff = new byte[8];
-
-				for (int i = 0; i < 9; i++) {
-					buff[i] = (byte) i;
-					sendMassge(sendUsbPipe, buff);
+			Thread thread = new Thread(() -> {
+				try {
+					receivedMassge(receivedUsbPipe);
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
-			}
+			});
+
+			thread.start();
+			thread.join();
+			System.out.println("OK");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -44,22 +50,22 @@ public class DUE_Usb4java_JavaxTest extends BaseTest {
 		}
 
 		UsbEndpoint receivedUsbEndpoint = (UsbEndpoint) iface.getUsbEndpoints().get(0);
-		UsbEndpoint sendUsbEndpoint = (UsbEndpoint) iface.getUsbEndpoints().get(0);
-		UsbPipe sendUsbPipe = sendUsbEndpoint.getUsbPipe();
-		sendUsbPipe.open();
+		UsbPipe receivedUsbPipe = receivedUsbEndpoint.getUsbPipe();
+		receivedUsbPipe.open();
 
-		final UsbPipe receivedUsbPipe = receivedUsbEndpoint.getUsbPipe();
-
-		new Thread(new Runnable() {
-			public void run() {
-				try {
-					receivedMassge(receivedUsbPipe);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+		receivedUsbPipe.addUsbPipeListener(new UsbPipeListener() {
+			@Override
+			public void errorEventOccurred(UsbPipeErrorEvent event) {
+				System.out.println("error occur");
 			}
-		}).start();
-		return sendUsbPipe;
+
+			@Override
+			public void dataEventOccurred(UsbPipeDataEvent event) {
+				System.out.println("data occur");
+			}
+		});
+
+		return receivedUsbPipe;
 	}
 
 	public UsbInterface linkDevice() throws Exception {
@@ -70,7 +76,7 @@ public class DUE_Usb4java_JavaxTest extends BaseTest {
 		}
 
 		if (device == null) {
-			System.out.println("设备未找到！");
+			System.out.println("Device not found!");
 			return null;
 		}
 
@@ -88,20 +94,17 @@ public class DUE_Usb4java_JavaxTest extends BaseTest {
 	}
 
 	public void receivedMassge(UsbPipe usbPipe) throws Exception {
-		byte[] b = new byte[8];
 		int length = 0;
-		while (true) {
-			length = usbPipe.syncSubmit(b);
+		byte[] bytes = new byte[64];
 
-			System.out.println("接收长度：" + length);
+		while (true) {
+			length = usbPipe.syncSubmit(bytes);
+			System.out.println("Receive message: " + length);
+
 			for (int i = 0; i < length; i++) {
-				System.out.print(Byte.toUnsignedInt(b[i]) + " ");
+				System.out.print(Byte.toUnsignedInt(bytes[i]));
 			}
 		}
-	}
-
-	public static void sendMassge(UsbPipe usbPipe, byte[] buff) throws Exception {
-		usbPipe.syncSubmit(buff);
 	}
 
 	public UsbDevice findDevice(UsbHub hub) {
@@ -113,15 +116,20 @@ public class DUE_Usb4java_JavaxTest extends BaseTest {
 		for (int i = 0; i < list.size(); i++) {
 			device = (UsbDevice) list.get(i);
 			UsbDeviceDescriptor desc = device.getUsbDeviceDescriptor();
+
 			if (desc.idVendor() == idVendor && desc.idProduct() == idProduct) {
 				return device;
 			}
+
 			if (device.isUsbHub()) {
 				device = findDevice((UsbHub) device);
-				if (device != null)
+
+				if (device != null) {
 					return device;
+				}
 			}
 		}
+
 		return null;
 	}
 
