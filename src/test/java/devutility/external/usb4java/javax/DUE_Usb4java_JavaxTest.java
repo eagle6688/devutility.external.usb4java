@@ -34,10 +34,10 @@ public class DUE_Usb4java_JavaxTest extends BaseTest {
 
 	public static void main(String[] args) {
 		DUE_Usb4java_JavaxTest test = new DUE_Usb4java_JavaxTest();
-		test.idVendor = (short) 0x2010;
-		test.idProduct = 0x7638;
-		test.interfaceNumber = (byte) 0;
-		test.endpointAddress = (byte) 0x83;
+		test.idVendor = (short) 0xe2b7;
+		test.idProduct = (short) 0x0811;
+		test.interfaceNumber = (byte) 3;
+		test.endpointAddress = (byte) 0x82;
 		TestExecutor.run(test);
 	}
 }
